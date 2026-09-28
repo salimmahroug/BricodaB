@@ -1,17 +1,15 @@
 {
   "name": "brico-dab-zarzis",
-  "version": "1.0.0",
-  "description": "Boutique en ligne Brico Dab Zarzis — site, API et tableau de bord admin",
+  "version": "2.0.0",
+  "description": "Brico Dab Zarzis — monorepo : site Next.js (web/) + API Express (server/) + base de données SQLite",
   "private": true,
   "scripts": {
-    "start": "node server/index.js",
-    "dev": "node server/index.js"
+    "install:all": "npm install --prefix server && npm install --prefix web",
+    "dev": "concurrently -n API,WEB -c yellow,cyan \"npm run dev --prefix server\" \"npm run dev --prefix web\"",
+    "start": "concurrently -n API,WEB -c yellow,cyan \"npm start --prefix server\" \"npm start --prefix web\"",
+    "build": "npm run build --prefix web"
   },
-  "dependencies": {
-    "bcryptjs": "^2.4.3",
-    "better-sqlite3": "^11.3.0",
-    "cookie-parser": "^1.4.6",
-    "express": "^4.19.2",
-    "jsonwebtoken": "^9.0.2"
+  "devDependencies": {
+    "concurrently": "^8.2.2"
   }
 }

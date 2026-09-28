@@ -1,4 +1,15 @@
 node_modules/
 server/data/*.db
+server/data/*.db-wal
+server/data/*.db-shm
 server/data/*.db-journal
 .env
+.env.local
+
+# Next.js
+web/.next/
+web/out/
+
+# Next.js dev-mode auto-generated agent docs (regenerated on `next dev`)
+web/AGENTS.md
+web/CLAUDE.md
