@@ -510,3 +510,53 @@ input, select, textarea { font: inherit; }
 .slide .s-text { padding-bottom: 60px; }
 .mini-banner .mb-label { background: linear-gradient(transparent, rgba(0,0,0,.9) 45%); padding-top: 34px; }
 .toast { width: max-content; }
+
+/* ---------- Animations & motion ---------- */
+#app.page-in { animation: pageFade .5s cubic-bezier(.22,.61,.36,1); }
+@keyframes pageFade { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+[data-reveal] { opacity: 0; transform: translateY(28px); transition: opacity .7s cubic-bezier(.22,.61,.36,1), transform .7s cubic-bezier(.22,.61,.36,1); will-change: opacity, transform; }
+[data-reveal].in { opacity: 1; transform: none; }
+
+.slide.active .s-img img { animation: kenburns 9s ease-in-out infinite alternate; }
+@keyframes kenburns { from { transform: scale(1); } to { transform: scale(1.08); } }
+
+#tool3d canvas { width: 100% !important; height: 100% !important; display: block; }
+#tool3d svg { animation: floatIcon 3.2s ease-in-out infinite; }
+@keyframes floatIcon { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+
+.p-card { transition: box-shadow .25s, border-color .25s, transform .25s; }
+.p-card:hover { transform: translateY(-5px); }
+.cat-tile { transition: border-color .25s, box-shadow .25s, transform .25s; }
+.cat-tile .ct-ic { transition: background .3s, transform .35s; }
+.cat-tile:hover .ct-ic { transform: rotate(-8deg) scale(1.08); }
+.mini-banner img { transition: transform .5s cubic-bezier(.22,.61,.36,1); }
+.brand { transition: filter .25s, color .25s, border-color .25s, transform .25s; }
+.brand:hover { transform: translateY(-3px); }
+
+.btn { transition: background .2s, color .2s, border-color .2s, transform .15s; }
+.btn:active { transform: scale(.96); }
+.btn-yellow:hover, .btn-dark:hover, .btn-wa:hover, .btn-outline:hover { transform: translateY(-2px); }
+
+@keyframes badgePulse { 0% { transform: scale(1); } 35% { transform: scale(1.4); } 65% { transform: scale(.9); } 100% { transform: scale(1); } }
+.count.pulse { animation: badgePulse .45s ease; }
+
+.toast.show { animation: toastPop .4s cubic-bezier(.22,.61,.36,1); }
+@keyframes toastPop { from { transform: translate(-50%, 24px) scale(.92); opacity: 0; } to { transform: translate(-50%, 0) scale(1); opacity: 1; } }
+
+.to-top { transition: opacity .2s, transform .2s; transform: scale(.6); }
+.to-top.show { transform: scale(1); }
+
+.wa-float { animation: waFloat 2.6s ease-in-out infinite; }
+@keyframes waFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+.wa-float::after { content: ""; position: absolute; inset: -6px; border-radius: 50%; border: 2px solid #25d366; opacity: .55; animation: waRing 2.4s ease-out infinite; pointer-events: none; }
+@keyframes waRing { 0% { transform: scale(1); opacity: .55; } 100% { transform: scale(1.7); opacity: 0; } }
+
+.suggest a { animation: fadeIn .25s ease; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; scroll-behavior: auto !important; }
+  [data-reveal] { opacity: 1 !important; transform: none !important; }
+  .wa-float::after { display: none; }
+}

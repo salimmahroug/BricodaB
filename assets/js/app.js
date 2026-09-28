@@ -8,6 +8,7 @@
   const $ = (sel, el = document) => el.querySelector(sel);
   const $$ = (sel, el = document) => [...el.querySelectorAll(sel)];
   const app = $("#app");
+  const REDUCE = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   /* ---------------- Icons ---------------- */
   const P = {
@@ -111,7 +112,11 @@
     const l = cart.find((x) => x.id === p.id);
     if (l) l.qty += qty; else cart.push({ id: p.id, qty });
     saveCart();
+    pulseCartBadge();
     toast(`« ${p.name} » ajouté au panier`);
+  }
+  function pulseCartBadge() {
+    $$("[data-cart-count]").forEach((b) => { b.classList.remove("pulse"); void b.offsetWidth; b.classList.add("pulse"); });
   }
   function setQty(id, qty) {
     id = Number(id);
@@ -174,7 +179,7 @@
     const d = discount(p);
     const out = p.stock === 0;
     return `
-    <article class="p-card">
+    <article class="p-card" data-reveal>
       <a class="p-img" href="#/produit/${p.id}">
         ${productVisual(p)}
         <div class="badges">
@@ -226,7 +231,7 @@
                 <p>${s.text}</p>
                 <a class="btn ${s.cls ? "btn-dark" : "btn-yellow"}" href="${s.link}">${s.cta} ${icon("right")}</a>
               </div>
-              ${s.img ? `<div class="s-img"><img src="${s.img}" alt=""></div>` : `<div class="s-big-ic">${icon(s.ic)}</div>`}
+              ${s.img ? `<div class="s-img"><img src="${s.img}" alt=""></div>` : `<div class="s-big-ic" id="tool3d">${icon(s.ic)}</div>`}
             </div>`).join("")}
           <button class="slider-arrow prev" data-slide="-1" aria-label="Précédent">${icon("left")}</button>
           <button class="slider-arrow next" data-slide="1" aria-label="Suivant">${icon("right")}</button>
@@ -243,7 +248,7 @@
       <section class="section">
         <div class="sec-head"><h2>Nos catégories</h2><a class="more" href="#/boutique">Tout voir →</a></div>
         <div class="cat-grid">
-          ${cats.map((c) => `<a class="cat-tile" href="#/categorie/${c.slug}"><div class="ct-ic">${icon(c.icon)}</div><strong>${esc(c.name)}</strong><span>${c.n} produit${c.n > 1 ? "s" : ""}</span></a>`).join("")}
+          ${cats.map((c) => `<a class="cat-tile" data-reveal href="#/categorie/${c.slug}"><div class="ct-ic">${icon(c.icon)}</div><strong>${esc(c.name)}</strong><span>${c.n} produit${c.n > 1 ? "s" : ""}</span></a>`).join("")}
         </div>
       </section>
 
@@ -260,7 +265,7 @@
       </section>
 
       <section class="section promo-row">
-        <a class="promo-banner yellow" href="#/categorie/materiaux-construction">
+        <a class="promo-banner yellow" data-reveal href="#/categorie/materiaux-construction">
           <div class="pb-text">
             <h3>La qualité allemande <span>à Zarzis !</span></h3>
             <p class="ar">الجودة الألمانية توّا في جرجيس</p>
@@ -269,7 +274,7 @@
           </div>
           <img src="assets/img/promo-ciment-colle.jpg" alt="Deutsch Color" loading="lazy">
         </a>
-        <a class="promo-banner" href="#/produit/201">
+        <a class="promo-banner" data-reveal href="#/produit/201">
           <div class="pb-text">
             <h3>Vente <span>flash</span></h3>
             <p>Boudin bas de porte : stop nuisibles, poussière et courants d'air.</p>
@@ -290,7 +295,7 @@
 
       <section class="section">
         <div class="sec-head"><h2>Nos marques</h2></div>
-        <div class="brands">${BRANDS.slice(0, 8).map((b) => `<a class="brand" href="#/boutique?marque=${encodeURIComponent(b)}">${esc(b.toUpperCase())}</a>`).join("")}</div>
+        <div class="brands">${BRANDS.slice(0, 8).map((b) => `<a class="brand" data-reveal href="#/boutique?marque=${encodeURIComponent(b)}">${esc(b.toUpperCase())}</a>`).join("")}</div>
       </section>
 
       <section class="section">${storeBlock()}</section>
@@ -299,14 +304,14 @@
 
   const reassure = () => `
     <section class="reassure">
-      <div><span class="ic">${icon("truck")}</span><div><strong>Livraison rapide</strong><span>Partout en Tunisie en 24 – 72h</span></div></div>
-      <div><span class="ic">${icon("cash")}</span><div><strong>Paiement à la livraison</strong><span>Payez en espèces à la réception</span></div></div>
-      <div><span class="ic">${icon("headset")}</span><div><strong>Service client</strong><span>Conseils au ${S.phone}</span></div></div>
-      <div><span class="ic">${icon("shield")}</span><div><strong>Qualité garantie</strong><span>Produits et marques de confiance</span></div></div>
+      <div data-reveal><span class="ic">${icon("truck")}</span><div><strong>Livraison rapide</strong><span>Partout en Tunisie en 24 – 72h</span></div></div>
+      <div data-reveal><span class="ic">${icon("cash")}</span><div><strong>Paiement à la livraison</strong><span>Payez en espèces à la réception</span></div></div>
+      <div data-reveal><span class="ic">${icon("headset")}</span><div><strong>Service client</strong><span>Conseils au ${S.phone}</span></div></div>
+      <div data-reveal><span class="ic">${icon("shield")}</span><div><strong>Qualité garantie</strong><span>Produits et marques de confiance</span></div></div>
     </section>`;
 
   const storeBlock = () => `
-    <div class="store">
+    <div class="store" data-reveal>
       <img src="assets/img/magasin.jpg" alt="Magasin Brico Dab à Zarzis" loading="lazy">
       <div class="st-text">
         <h2>Visitez notre magasin <span>à Zarzis</span></h2>
@@ -645,12 +650,15 @@
       default: html = view404();
     }
     app.innerHTML = html;
+    app.classList.remove("page-in");
+    void app.offsetWidth;
+    app.classList.add("page-in");
     $$(".nav-links a").forEach((a) => a.classList.toggle("active", a.getAttribute("href") === "#" + path || (path === "/" && a.getAttribute("href") === "#/")));
     closeDrawers();
     $("#cat-menu").classList.add("hidden");
     if (seg[0] !== "recherche") $("#search-q").value = "";
-    if (!seg[0]) startSlider();
-    else stopSlider();
+    if (!seg[0]) { startSlider(); initHeroScene(); } else { stopSlider(); disposeHeroScene(); }
+    initReveal();
     window.scrollTo(0, 0);
   }
 
@@ -661,6 +669,109 @@
     const s = p.toString();
     location.hash = path + (s ? "?" + s : "");
   }
+
+  /* ---------------- Animations au scroll ---------------- */
+  let revealObs;
+  function initReveal() {
+    const els = $$("[data-reveal]");
+    if (REDUCE) { els.forEach((e) => e.classList.add("in")); return; }
+    if (!revealObs) {
+      revealObs = new IntersectionObserver((entries) => {
+        entries.forEach((en) => { if (en.isIntersecting) { en.target.classList.add("in"); revealObs.unobserve(en.target); } });
+      }, { threshold: .12, rootMargin: "0px 0px -40px 0px" });
+    }
+    els.forEach((e, i) => { e.style.transitionDelay = (i % 6) * 70 + "ms"; revealObs.observe(e); });
+  }
+
+  /* ---------------- Scène 3D (Three.js) — outil animé du slider ---------------- */
+  const THREE_CDN = "https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js";
+  let heroScene, heroRAF;
+  function loadThreeJS(cb) {
+    if (window.THREE) return cb();
+    let s = document.getElementById("three-cdn");
+    let done = false;
+    const finish = () => { if (done) return; done = true; clearTimeout(timer); if (window.THREE) cb(); };
+    const timer = setTimeout(finish, 6000); // CDN bloqué/lent : on abandonne, l'icône statique reste affichée
+    if (!s) {
+      s = document.createElement("script");
+      s.id = "three-cdn";
+      s.src = THREE_CDN;
+      document.head.appendChild(s);
+    }
+    s.addEventListener("load", finish, { once: true });
+    s.addEventListener("error", finish, { once: true });
+  }
+  function initHeroScene() {
+    const holder = $("#tool3d");
+    if (!holder || REDUCE || !window.WebGLRenderingContext) return;
+    loadThreeJS(() => {
+      if (!document.body.contains(holder) || holder.dataset.ready) return;
+      holder.dataset.ready = "1";
+      const w = holder.clientWidth || 300, h = holder.clientHeight || 300;
+      const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+      renderer.setSize(w, h);
+      holder.innerHTML = "";
+      holder.appendChild(renderer.domElement);
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(42, w / h, .1, 100);
+      camera.position.set(0, 0, 6.5);
+      scene.add(new THREE.AmbientLight(0xffffff, 1.1));
+      const key = new THREE.DirectionalLight(0xffffff, 1.2); key.position.set(3, 4, 5); scene.add(key);
+      const rim = new THREE.DirectionalLight(0xf5c518, .8); rim.position.set(-4, -2, -3); scene.add(rim);
+
+      const group = new THREE.Group();
+      const nut = new THREE.Mesh(new THREE.TorusGeometry(1.25, .4, 10, 6), new THREE.MeshStandardMaterial({ color: 0xf5c518, metalness: .45, roughness: .3 }));
+      group.add(nut);
+      const bolt = new THREE.Mesh(new THREE.CylinderGeometry(.3, .3, 2.6, 6), new THREE.MeshStandardMaterial({ color: 0x2b2d31, metalness: .5, roughness: .4 }));
+      bolt.rotation.z = Math.PI / 2.3; bolt.position.set(1.5, -1, .2);
+      group.add(bolt);
+      const bit = new THREE.Mesh(new THREE.OctahedronGeometry(.55, 0), new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: .2, roughness: .5 }));
+      bit.position.set(-1.6, 1.1, -.3);
+      group.add(bit);
+      scene.add(group);
+
+      let mx = 0, my = 0;
+      const onMove = (e) => {
+        const p = e.touches ? e.touches[0] : e;
+        const r = holder.getBoundingClientRect();
+        mx = ((p.clientX - r.left) / r.width - .5);
+        my = ((p.clientY - r.top) / r.height - .5);
+      };
+      holder.addEventListener("pointermove", onMove);
+
+      function animate() {
+        group.rotation.y += .006;
+        group.rotation.x += .0022;
+        bit.rotation.x += .015; bit.rotation.y += .01;
+        camera.position.x += (mx * 1.4 - camera.position.x) * .05;
+        camera.position.y += (-my * 1.4 - camera.position.y) * .05;
+        camera.lookAt(0, 0, 0);
+        renderer.render(scene, camera);
+        heroRAF = requestAnimationFrame(animate);
+      }
+      animate();
+      heroScene = { renderer, holder, onMove, camera };
+    });
+  }
+  function disposeHeroScene() {
+    if (heroRAF) cancelAnimationFrame(heroRAF);
+    heroRAF = null;
+    if (heroScene) {
+      heroScene.holder.removeEventListener("pointermove", heroScene.onMove);
+      heroScene.holder.dataset.ready = "";
+      heroScene.renderer.dispose();
+      heroScene = null;
+    }
+  }
+  window.addEventListener("resize", () => {
+    if (!heroScene) return;
+    const w = heroScene.holder.clientWidth, h = heroScene.holder.clientHeight;
+    if (!w || !h) return;
+    heroScene.renderer.setSize(w, h);
+    heroScene.camera.aspect = w / h;
+    heroScene.camera.updateProjectionMatrix();
+  });
 
   /* ---------------- Slider ---------------- */
   let slideI = 0, slideT;
