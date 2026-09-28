@@ -1,0 +1,29 @@
+# Déploiement gratuit sur Render.com (aucune carte bancaire requise).
+# Sur render.com : New + → Blueprint → connecter ce dépôt GitHub → Render
+# lit ce fichier automatiquement et propose le service ci-dessous.
+#
+# ⚠️ Le disque du plan gratuit est réinitialisé à chaque nouveau déploiement
+# (git push) : les commandes/comptes créés depuis le dernier déploiement
+# seront perdus. Pour une persistance durable, ajoutez un disque payant
+# (Render → onglet Disks) ou migrez vers une base hébergée (ex. Turso).
+services:
+  - type: web
+    name: brico-dab-zarzis
+    runtime: node
+    plan: free
+    branch: claude/brico-dab-web-app-k7a83k
+    buildCommand: npm run install:all && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_VERSION
+        value: 22
+      - key: API_PORT
+        value: 4000
+      - key: API_ORIGIN
+        value: http://localhost:4000
+      - key: JWT_SECRET
+        generateValue: true
+      - key: ADMIN_EMAIL
+        value: admin@bricodab.tn
+      - key: ADMIN_PASSWORD
+        sync: false # à définir vous-même avant le premier déploiement (voir README)

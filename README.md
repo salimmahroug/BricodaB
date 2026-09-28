@@ -61,11 +61,27 @@ Ou, depuis la racine : `npm run build` puis `npm start` (démarre l'API et le si
 
 | Variable | Où | Rôle | Par défaut |
 |---|---|---|---|
-| `PORT` | `server/` | Port de l'API | `4000` |
+| `API_PORT` | `server/` | Port de l'API (indépendant de `PORT`, réservé au site — voir déploiement) | `4000` |
 | `JWT_SECRET` | `server/` | Clé de signature des sessions — **à définir en production** | valeur de développement |
 | `ADMIN_EMAIL` / `ADMIN_PASSWORD` | `server/` | Identifiants du compte admin créé au premier démarrage | `admin@bricodab.tn` / `admin123` |
 | `WEB_ORIGIN` | `server/` | Origine autorisée en CORS (accès direct à l'API hors proxy) | `http://localhost:3000` |
 | `API_ORIGIN` | `web/` | Adresse de l'API que Next.js doit proxifier | `http://localhost:4000` |
+
+## Publier le site en ligne, gratuitement (Render)
+
+[Render](https://render.com) offre un hébergement gratuit sans carte bancaire, avec déploiement automatique depuis GitHub. Le fichier `render.yaml` à la racine du dépôt décrit déjà tout le service : Render le détecte et propose la configuration en un clic.
+
+⚠️ **Limite du plan gratuit :** le disque n'est pas persistant — la base de données (commandes, comptes clients, catalogue modifié) est réinitialisée à chaque nouveau déploiement (chaque `git push`), mais **survit** aux mises en veille normales (Render endort le service après 15 min d'inactivité, puis le réveille sans perte de données). Pour une persistance durable même entre deux déploiements, ajoutez un disque payant (Render → onglet *Disks*) ou migrez vers une base hébergée.
+
+**Étapes :**
+1. Créez un compte gratuit sur [render.com](https://render.com) (connexion possible directement avec GitHub).
+2. Cliquez **New +** → **Blueprint**.
+3. Choisissez ce dépôt GitHub (`salimmahroug/BricodaB`) — Render détecte `render.yaml` automatiquement.
+4. Avant de valider, définissez la variable `ADMIN_PASSWORD` (mot de passe de votre compte admin) — sinon le mot de passe par défaut `admin123` sera utilisé.
+5. Cliquez **Apply** / **Deploy**. Le premier déploiement prend quelques minutes (installation + build Next.js).
+6. Une fois prêt, Render donne une URL publique du type `https://brico-dab-zarzis.onrender.com` — c'est votre site en ligne, avec `/admin` pour le tableau de bord.
+
+Pour les mises à jour suivantes : chaque `git push` sur la branche configurée redéploie automatiquement.
 
 ## Modifier le contenu
 
