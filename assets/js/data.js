@@ -1,6 +1,10 @@
 /* =========================================================
-   Brico Dab Zarzis — données boutique
-   Modifiez ce fichier pour mettre à jour le catalogue.
+   Brico Dab Zarzis — catalogue de secours (mode hors ligne)
+   Si le serveur Node (server/) est démarré, le site charge son
+   catalogue et vos comptes depuis la vraie base de données et
+   ignore ce fichier. Sans serveur (site hébergé en pur statique,
+   aperçu Artifact…), c'est CE fichier qui sert de catalogue —
+   utile pour une démo, mais pas relié au tableau de bord admin.
    Prix en dinars tunisiens (DT). Les prix ci-dessous sont
    des exemples : remplacez-les par vos vrais tarifs.
    ========================================================= */

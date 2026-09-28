@@ -4,11 +4,47 @@
 (function () {
   "use strict";
 
-  const S = window.STORE, CATS = window.CATEGORIES, PRODUCTS = window.PRODUCTS, BRANDS = window.BRANDS;
+  const S = window.STORE;
+  let CATS = window.CATEGORIES, PRODUCTS = window.PRODUCTS, BRANDS = window.BRANDS;
   const $ = (sel, el = document) => el.querySelector(sel);
   const $$ = (sel, el = document) => [...el.querySelectorAll(sel)];
   const app = $("#app");
   const REDUCE = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let currentUser = null; // rempli par /api/auth/me si un serveur est disponible
+
+  /* ---------------- Connexion à l'API (facultative) ----------------
+     Le site fonctionne aussi en pur statique (catalogue embarqué dans
+     data.js) : si aucun serveur Node n'est disponible (ex. hébergement
+     statique), les appels ci-dessous échouent silencieusement et le
+     catalogue/compte restent en mode hors-ligne. */
+  async function apiFetch(url, opts = {}) {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 4000);
+    try {
+      const res = await fetch(url, { credentials: "include", headers: { "Content-Type": "application/json" }, signal: ctrl.signal, ...opts });
+      clearTimeout(timer);
+      let data = null;
+      try { data = await res.json(); } catch (e) { /* pas de corps JSON */ }
+      return { ok: res.ok, status: res.status, data };
+    } catch (e) {
+      clearTimeout(timer);
+      return { ok: false, offline: true, data: null };
+    }
+  }
+  async function loadCatalog() {
+    const [catRes, prodRes] = await Promise.all([apiFetch("/api/categories"), apiFetch("/api/products")]);
+    if (catRes.ok && catRes.data && Array.isArray(catRes.data.categories) && catRes.data.categories.length) {
+      CATS = catRes.data.categories.map((c) => ({ slug: c.slug, name: c.name, icon: c.icon || "box", desc: c.description || "" }));
+    }
+    if (prodRes.ok && prodRes.data && Array.isArray(prodRes.data.products) && prodRes.data.products.length) {
+      PRODUCTS = prodRes.data.products;
+      BRANDS = [...new Set(PRODUCTS.map((p) => p.brand).filter(Boolean))].sort((a, b) => a.localeCompare(b, "fr"));
+    }
+  }
+  async function loadCurrentUser() {
+    const r = await apiFetch("/api/auth/me");
+    currentUser = r.ok && r.data ? r.data.user : null;
+  }
 
   /* ---------------- Icons ---------------- */
   const P = {
@@ -490,6 +526,7 @@
     const items = cartItems();
     if (!items.length) { location.hash = "#/panier"; return ""; }
     const saved = store.get("client", {});
+    if (currentUser) { saved.nom = saved.nom || currentUser.name; saved.tel = saved.tel || currentUser.phone || ""; }
     const f = (id, label, type = "text", extra = "") => `<div class="field ${extra}"><label for="${id}">${label}</label><input id="${id}" name="${id}" type="${type}" value="${esc(saved[id] || "")}"><span class="err">Champ obligatoire</span></div>`;
     return `
     <div class="container">
@@ -517,7 +554,7 @@
     </div>`;
   }
 
-  function submitCheckout(form) {
+  async function submitCheckout(form) {
     const data = Object.fromEntries(new FormData(form));
     let ok = true;
     const rules = { nom: (v) => v.trim().length >= 3, tel: (v) => /^[0-9 +]{8,15}$/.test(v.trim()), ville: (v) => v.trim(), adresse: (v) => data.livr === "magasin" || v.trim().length >= 5 };
@@ -532,7 +569,20 @@
     const items = cartItems();
     const t = cartTotal();
     const sh = data.livr === "magasin" ? 0 : shipping(t);
-    const num = "BD" + Date.now().toString().slice(-7);
+    const submitBtn = form.querySelector("button[type=submit]");
+    if (submitBtn) submitBtn.disabled = true;
+    // Enregistre la commande dans la base de données (si le serveur est disponible) ;
+    // en mode statique (hors ligne), on continue avec un numéro généré localement.
+    const apiRes = await apiFetch("/api/orders", {
+      method: "POST",
+      body: JSON.stringify({
+        items: items.map((l) => ({ id: l.p.id, name: l.p.name, qty: l.qty, price: l.p.price })),
+        shipping: sh, client_name: data.nom, client_phone: data.tel,
+        gouvernorat: data.gouv, ville: data.ville, adresse: data.adresse, mode: data.livr, note: data.note
+      })
+    });
+    if (submitBtn) submitBtn.disabled = false;
+    const num = (apiRes.ok && apiRes.data && apiRes.data.order.order_number) || "BD" + Date.now().toString().slice(-7);
     const lines = [
       `🛒 *Nouvelle commande ${num}* — Brico Dab Zarzis`, "",
       ...items.map((l) => `• ${l.qty} × ${l.p.name} (${ref(l.p)}) = ${money(l.p.price * l.qty)}`), "",
@@ -568,6 +618,75 @@
     const list = wish.map(prodBy).filter(Boolean);
     return `<div class="container">${crumbs({ label: "Mes favoris" })}<h1 class="page-title">Mes favoris</h1>
       ${list.length ? grid(list) : `<div class="empty">${icon("heart")}<p>Vous n'avez pas encore de favoris.</p><a class="btn btn-yellow" href="#/boutique">Découvrir nos produits</a></div>`}<div style="height:48px"></div></div>`;
+  }
+
+  function authBox(err) {
+    return err ? `<p class="err" style="display:block;margin-bottom:14px;background:#fdeaea;color:var(--red);padding:10px 14px;border-radius:8px;font-size:14px">${esc(err)}</p>` : "";
+  }
+  function viewLogin(err) {
+    if (currentUser) { location.hash = "#/compte"; return ""; }
+    return `<div class="container">${crumbs({ label: "Connexion" })}
+      <div class="box" style="max-width:440px;margin:0 auto 48px">
+        <h1 class="page-title" style="font-size:22px">Connexion</h1>
+        ${authBox(err)}
+        <form id="login-form" class="form-grid" novalidate>
+          <div class="field full"><label for="li-email">E-mail *</label><input id="li-email" type="email" required></div>
+          <div class="field full"><label for="li-pass">Mot de passe *</label><input id="li-pass" type="password" required></div>
+          <div class="full"><button class="btn btn-yellow btn-block" type="submit">Se connecter</button></div>
+        </form>
+        <p style="margin-top:16px;font-size:14px;color:var(--muted)">Pas encore de compte ? <a href="#/inscription" style="color:var(--yellow-dark);font-weight:600">Créer un compte</a></p>
+      </div></div>`;
+  }
+  function viewRegister(err) {
+    if (currentUser) { location.hash = "#/compte"; return ""; }
+    return `<div class="container">${crumbs({ label: "Créer un compte" })}
+      <div class="box" style="max-width:440px;margin:0 auto 48px">
+        <h1 class="page-title" style="font-size:22px">Créer un compte</h1>
+        ${authBox(err)}
+        <form id="register-form" class="form-grid" novalidate>
+          <div class="field full"><label for="re-nom">Nom et prénom *</label><input id="re-nom" required></div>
+          <div class="field full"><label for="re-email">E-mail *</label><input id="re-email" type="email" required></div>
+          <div class="field full"><label for="re-tel">Téléphone</label><input id="re-tel" type="tel"></div>
+          <div class="field full"><label for="re-pass">Mot de passe * <span style="font-weight:400;color:var(--muted)">(6 caractères min.)</span></label><input id="re-pass" type="password" minlength="6" required></div>
+          <div class="full"><button class="btn btn-yellow btn-block" type="submit">Créer mon compte</button></div>
+        </form>
+        <p style="margin-top:16px;font-size:14px;color:var(--muted)">Déjà un compte ? <a href="#/connexion" style="color:var(--yellow-dark);font-weight:600">Se connecter</a></p>
+      </div></div>`;
+  }
+  const ORDER_STATUS = { en_attente: ["En attente", "badge-out"], confirmee: ["Confirmée", "badge-new"], livree: ["Livrée", ""], annulee: ["Annulée", "badge-sale"] };
+  function viewAccount() {
+    if (!currentUser) { location.hash = "#/connexion"; return ""; }
+    return `<div class="container">${crumbs({ label: "Mon compte" })}
+      <h1 class="page-title">Mon compte</h1>
+      <div class="info-grid">
+        <div class="box">
+          <h3>Bonjour ${esc(currentUser.name)}</h3>
+          <p style="color:var(--grey)">${esc(currentUser.email)}${currentUser.phone ? " · " + esc(currentUser.phone) : ""}</p>
+          <button class="btn btn-outline btn-sm" id="logout-btn" style="margin-top:10px">Se déconnecter</button>
+          ${currentUser.role === "admin" ? `<p style="margin-top:16px"><a class="btn btn-dark btn-sm" href="/admin" target="_blank" rel="noopener">Ouvrir le tableau de bord admin</a></p>` : ""}
+        </div>
+        <div class="box">
+          <h3>Mes commandes</h3>
+          <div id="my-orders"><p style="color:var(--muted)">Chargement…</p></div>
+        </div>
+      </div>
+    </div>`;
+  }
+  async function loadMyOrders() {
+    const box = $("#my-orders");
+    if (!box) return;
+    const r = await apiFetch("/api/auth/orders");
+    if (!r.ok || !r.data) { box.innerHTML = `<p style="color:var(--muted)">Historique indisponible hors ligne.</p>`; return; }
+    const orders = r.data.orders;
+    if (!orders.length) { box.innerHTML = `<p style="color:var(--muted)">Vous n'avez pas encore passé de commande.</p><a class="btn btn-yellow btn-sm" href="#/boutique">Découvrir la boutique</a>`; return; }
+    box.innerHTML = orders.map((o) => {
+      const [lbl, cls] = ORDER_STATUS[o.status] || ["—", ""];
+      return `<div style="border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap"><b>${esc(o.order_number)}</b><span class="badge ${cls}" style="position:static">${lbl}</span></div>
+        <div style="font-size:13px;color:var(--muted);margin:4px 0">${new Date(o.created_at).toLocaleDateString("fr-FR")} · ${o.items.length} article${o.items.length > 1 ? "s" : ""}</div>
+        <div style="font-weight:700">${money(o.total)}</div>
+      </div>`;
+    }).join("");
   }
 
   function viewContact() {
@@ -647,9 +766,13 @@
       case "favoris": html = viewWish(); break;
       case "contact": html = viewContact(); break;
       case "a-propos": html = viewAbout(); break;
+      case "connexion": html = viewLogin(); break;
+      case "inscription": html = viewRegister(); break;
+      case "compte": html = viewAccount(); break;
       default: html = view404();
     }
     app.innerHTML = html;
+    if (seg[0] === "compte" && currentUser) loadMyOrders();
     app.classList.remove("page-in");
     void app.offsetWidth;
     app.classList.add("page-in");
@@ -818,6 +941,20 @@
     $("#mob-cats").innerHTML = catLinks;
     $("#footer-cats").innerHTML = CATS.slice(0, 7).map((c) => `<li><a href="#/categorie/${c.slug}">${esc(c.name)}</a></li>`).join("");
     $("#year").textContent = new Date().getFullYear();
+    renderAccountUI();
+  }
+
+  function renderAccountUI() {
+    const link = $("#account-link"), label = $("#account-label"), mob = $("#mob-account");
+    if (currentUser) {
+      link.href = "#/compte";
+      label.textContent = currentUser.name.split(" ")[0];
+      mob.innerHTML = `<a href="#/compte">Mon compte (${esc(currentUser.name.split(" ")[0])})</a><a href="#" id="mob-logout">Se déconnecter</a>`;
+    } else {
+      link.href = "#/connexion";
+      label.textContent = "Connexion";
+      mob.innerHTML = `<a href="#/connexion">Se connecter</a><a href="#/inscription">Créer un compte</a>`;
+    }
   }
 
   /* ---------------- Events ---------------- */
@@ -869,6 +1006,7 @@
     }
     if (t.closest("#f-reset")) { const [path, qs] = location.hash.slice(1).split("?"); const p = new URLSearchParams(qs || ""); ["min", "max", "marque"].forEach((k) => p.delete(k)); location.hash = path + (p.toString() ? "?" + p : ""); return; }
     if (t.closest("#clear-cart")) { cart = []; saveCart(); route(); return; }
+    if (t.closest("#logout-btn") || t.id === "mob-logout") { e.preventDefault(); logout(); return; }
     if (t.closest("#to-top")) { scrollTo({ top: 0, behavior: "smooth" }); }
   });
   function startSliderKeep() { stopSlider(); slideT = setInterval(() => goSlide(slideI + 1), 5500); }
@@ -897,7 +1035,49 @@
       e.target.reset();
     }
     if (e.target.id === "nl-form") { e.preventDefault(); e.target.reset(); toast("Merci pour votre inscription !"); }
+    if (e.target.id === "login-form") {
+      e.preventDefault();
+      const email = $("#li-email").value.trim(), password = $("#li-pass").value;
+      login(email, password);
+    }
+    if (e.target.id === "register-form") {
+      e.preventDefault();
+      const body = { name: $("#re-nom").value.trim(), email: $("#re-email").value.trim(), phone: $("#re-tel").value.trim(), password: $("#re-pass").value };
+      register(body);
+    }
   });
+
+  async function login(email, password) {
+    const r = await apiFetch("/api/auth/login", { method: "POST", body: JSON.stringify({ email, password }) });
+    if (!r.ok) {
+      const msg = r.offline ? "Impossible de contacter le serveur. Réessayez plus tard." : (r.data && r.data.error) || "Connexion impossible.";
+      app.innerHTML = viewLogin(msg); return;
+    }
+    currentUser = r.data.user;
+    renderAccountUI();
+    toast(`Bienvenue ${currentUser.name.split(" ")[0]} !`);
+    location.hash = "#/compte"; route();
+  }
+  async function register(body) {
+    if (!body.name || body.name.length < 2) { app.innerHTML = viewRegister("Nom invalide."); return; }
+    if (!body.password || body.password.length < 6) { app.innerHTML = viewRegister("Le mot de passe doit contenir au moins 6 caractères."); return; }
+    const r = await apiFetch("/api/auth/register", { method: "POST", body: JSON.stringify(body) });
+    if (!r.ok) {
+      const msg = r.offline ? "Impossible de contacter le serveur. Réessayez plus tard." : (r.data && r.data.error) || "Inscription impossible.";
+      app.innerHTML = viewRegister(msg); return;
+    }
+    currentUser = r.data.user;
+    renderAccountUI();
+    toast(`Compte créé, bienvenue ${currentUser.name.split(" ")[0]} !`);
+    location.hash = "#/compte"; route();
+  }
+  async function logout() {
+    await apiFetch("/api/auth/logout", { method: "POST" });
+    currentUser = null;
+    renderAccountUI();
+    toast("Vous êtes déconnecté(e)");
+    location.hash = "#/"; route();
+  }
 
   let sT;
   document.addEventListener("input", (e) => {
@@ -909,8 +1089,11 @@
   window.addEventListener("storage", () => { cart = store.get("cart", []); wish = store.get("wish", []); updateBadges(); renderMiniCart(); });
 
   /* ---------------- Init ---------------- */
-  renderChrome();
-  updateBadges();
-  renderMiniCart();
-  route();
+  (async function init() {
+    await Promise.all([loadCatalog(), loadCurrentUser()]);
+    renderChrome();
+    updateBadges();
+    renderMiniCart();
+    route();
+  })();
 })();

@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tableau de bord — Brico Dab Zarzis</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Montserrat:wght@800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+
+  <!-- Écran de connexion admin -->
+  <div id="login-screen" class="login-screen">
+    <form id="admin-login-form" class="login-card" novalidate>
+      <div class="login-logo" data-logo></div>
+      <h1>Tableau de bord</h1>
+      <p class="muted">Connexion réservée à l'administrateur.</p>
+      <div id="login-error" class="login-error hidden"></div>
+      <div class="field"><label for="al-email">E-mail</label><input id="al-email" type="email" required autocomplete="username"></div>
+      <div class="field"><label for="al-pass">Mot de passe</label><input id="al-pass" type="password" required autocomplete="current-password"></div>
+      <button class="btn-primary" type="submit">Se connecter</button>
+      <p class="muted small">Compte créé automatiquement au premier démarrage du serveur (voir le fichier README du projet).</p>
+      <a class="back-link" href="../index.html">← Retour au site</a>
+    </form>
+  </div>
+
+  <!-- Application admin -->
+  <div id="admin-app" class="admin-app hidden">
+    <aside class="sidebar">
+      <div class="side-logo" data-logo="dark"></div>
+      <nav id="side-nav">
+        <a href="#/tableau-de-bord" data-nav="tableau-de-bord">📊 <span>Tableau de bord</span></a>
+        <a href="#/produits" data-nav="produits">📦 <span>Produits</span></a>
+        <a href="#/commandes" data-nav="commandes">🧾 <span>Commandes</span></a>
+        <a href="#/clients" data-nav="clients">👥 <span>Clients</span></a>
+        <a href="#/categories" data-nav="categories">🏷️ <span>Catégories</span></a>
+      </nav>
+      <div class="side-foot">
+        <a href="../index.html" target="_blank" rel="noopener">↗ Voir le site</a>
+        <button id="admin-logout">Se déconnecter</button>
+      </div>
+    </aside>
+    <div class="main">
+      <header class="topbar">
+        <button id="mob-toggle" class="mob-toggle" aria-label="Menu">☰</button>
+        <h2 id="page-title">Tableau de bord</h2>
+        <span id="who" class="who"></span>
+      </header>
+      <main id="content" class="content"></main>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <div class="modal-overlay hidden" id="modal-overlay"><div class="modal" id="modal"></div></div>
+
+  <script src="js/admin.js"></script>
+</body>
+</html>
