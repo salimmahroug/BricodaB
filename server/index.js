@@ -34,13 +34,14 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: "Erreur serveur." });
 });
 
-// API_PORT (pas PORT) : sur un hébergeur comme Render, la plateforme injecte
-// un seul PORT partagé par tous les processus du conteneur. Le site (Next.js)
-// doit l'utiliser pour être joignable depuis l'extérieur ; l'API, elle,
-// n'est appelée qu'en interne (par le proxy Next.js), donc son port est
-// indépendant et fixe pour éviter que les deux processus ne se disputent
-// le même port.
-const PORT = process.env.API_PORT || 4000;
+// Deux façons de déployer cette API, donc deux façons de choisir le port :
+// - Service combiné (API + site Next.js dans le même conteneur, un seul
+//   PORT public partagé) : API_PORT est défini explicitement (ex. 4000)
+//   pour que l'API n'entre pas en collision avec Next.js sur le PORT public.
+// - Service API seule (ex. sur Render, séparé du site hébergé sur Vercel) :
+//   aucun API_PORT n'est défini, donc l'API utilise directement le PORT
+//   fourni par la plateforme pour être joignable depuis l'extérieur.
+const PORT = process.env.API_PORT || process.env.PORT || 4000;
 app.listen(PORT, () => {
   console.log(`\n  Brico Dab Zarzis — API démarrée : http://localhost:${PORT}/api\n`);
 });
