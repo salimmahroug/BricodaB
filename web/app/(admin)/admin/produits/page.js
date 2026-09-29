@@ -1,9 +1,10 @@
 "use client";
 import { useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api";
-import { money } from "@/lib/format";
+import { money, resolveImg } from "@/lib/format";
 import { useAdmin } from "@/components/admin/AdminContext";
 import Modal from "@/components/admin/Modal";
+import ImageUploadField from "@/components/admin/ImageUploadField";
 
 export default function ProductsPage() {
   const { toast } = useAdmin();
@@ -39,7 +40,7 @@ export default function ProductsPage() {
                 const cat = cats.find((c) => c.slug === p.cat);
                 return (
                   <tr key={p.id}>
-                    <td>{p.img ? <img className="cell-img" src={"/" + p.img.replace(/^\/+/, "")} alt="" /> : <div className="cell-img" style={{ display: "grid", placeItems: "center", color: "#bbb" }}>–</div>}</td>
+                    <td>{p.img ? <img className="cell-img" src={resolveImg(p.img)} alt="" /> : <div className="cell-img" style={{ display: "grid", placeItems: "center", color: "#bbb" }}>–</div>}</td>
                     <td>{p.name}</td><td>{cat ? cat.name : p.cat}</td><td>{p.brand}</td>
                     <td className="mono">{money(p.price)}{p.old ? <><br /><small className="mono" style={{ color: "#e53935", textDecoration: "line-through" }}>{money(p.old)}</small></> : null}</td>
                     <td className={p.stock <= 5 ? "stock-low" : ""}>{p.stock}</td>
@@ -100,7 +101,7 @@ function ProductForm({ cats, product, onClose, onSaved }) {
         <div className="field"><label>Prix (DT) *</label><input name="price" type="number" step="0.001" min="0" defaultValue={product.price ?? ""} required /></div>
         <div className="field"><label>Ancien prix (promo)</label><input name="old" type="number" step="0.001" min="0" defaultValue={product.old || ""} /></div>
         <div className="field"><label>Stock</label><input name="stock" type="number" min="0" defaultValue={product.stock ?? 100} /></div>
-        <div className="field"><label>Image (chemin ou URL)</label><input name="img" defaultValue={product.img || ""} placeholder="assets/img/…" /></div>
+        <ImageUploadField name="img" defaultValue={product.img || ""} />
         <div className="field full"><label>Description courte</label><textarea name="short" rows="2" defaultValue={product.short || ""} /></div>
         <div className="field full"><label>Points forts (un par ligne)</label><textarea name="feats" rows="3" defaultValue={(product.feats || []).join("\n")} /></div>
         <div className="field full"><label>Caractéristiques (Clé: valeur, une par ligne)</label>

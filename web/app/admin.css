@@ -124,3 +124,10 @@ tbody tr:hover { background: #fafafa; }
   .form-grid { grid-template-columns: 1fr; }
   th, td { padding: 10px 12px; }
 }
+
+/* ---------- Champ image (upload) ---------- */
+.img-field-row { display: flex; gap: 14px; align-items: flex-start; }
+.img-preview { width: 84px; height: 84px; border-radius: 8px; object-fit: cover; background: var(--grey-light); border: 1px solid var(--border); flex-shrink: 0; }
+.img-preview.empty { display: grid; place-items: center; color: #bbb; }
+.img-field-controls { flex: 1; display: grid; gap: 8px; }
+.img-field-controls input[type=file] { font-size: 13px; }

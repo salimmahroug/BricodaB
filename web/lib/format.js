@@ -36,3 +36,12 @@ export const ORDER_STATUS = {
   livree: { label: "Livrée", badge: "" },
   annulee: { label: "Annulée", badge: "badge-sale" }
 };
+
+// Une image vient soit du dossier public du site ("assets/img/x.jpg"), soit
+// d'un envoi depuis l'admin, stocké comme URL absolue de l'API
+// ("https://mon-api.onrender.com/uploads/x.jpg"). On ne préfixe que la
+// première forme.
+export function resolveImg(src) {
+  if (!src) return null;
+  return /^https?:\/\//i.test(src) ? src : "/" + src.replace(/^\/+/, "");
+}

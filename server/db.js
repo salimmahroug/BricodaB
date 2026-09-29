@@ -75,6 +75,25 @@ db.exec(`
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     FOREIGN KEY (user_id) REFERENCES users(id)
   );
+
+  -- Bannières / widgets publicitaires de la page d'accueil (slider, petites
+  -- bannières à côté du slider, bandeau promo) : gérables depuis l'admin.
+  CREATE TABLE IF NOT EXISTS banners (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    zone TEXT NOT NULL,
+    position INTEGER NOT NULL DEFAULT 0,
+    kicker TEXT,
+    title TEXT,
+    highlight TEXT,
+    subtitle TEXT,
+    body TEXT,
+    ar_text TEXT,
+    image TEXT,
+    link TEXT,
+    cta TEXT,
+    style TEXT NOT NULL DEFAULT '',
+    active INTEGER NOT NULL DEFAULT 1
+  );
 `);
 
 /* ---------------- Amorçage (première exécution uniquement) ---------------- */
@@ -112,6 +131,26 @@ function seedIfEmpty() {
     db.prepare("INSERT INTO users (name, email, phone, password_hash, role) VALUES (?, ?, ?, ?, 'admin')")
       .run("Administrateur", email, "26118124", hash);
     console.log(`[db] Compte admin créé → ${email} / ${pass}  ⚠️  à changer immédiatement après la première connexion.`);
+  }
+
+  const bannerCount = db.prepare("SELECT COUNT(*) n FROM banners").get().n;
+  if (bannerCount === 0) {
+    const insBanner = db.prepare(`INSERT INTO banners
+      (zone, position, kicker, title, highlight, subtitle, body, ar_text, image, link, cta, style)
+      VALUES (@zone, @position, @kicker, @title, @highlight, @subtitle, @body, @ar_text, @image, @link, @cta, @style)`);
+    const defaults = { kicker: null, title: null, highlight: null, subtitle: null, body: null, ar_text: null, image: null, link: null, cta: null, style: "" };
+    const banners = [
+      { zone: "slider", position: 0, kicker: "Qualité allemande", title: "Ciment colle", highlight: "Deutsch Color", body: "FM 1000 · FM 2200 · FM 3000 — la qualité allemande, enfin à Zarzis ! Idéal pour le carrelage et le bâtiment.", image: "assets/img/promo-ciment-colle.jpg", link: "/categorie/materiaux-construction", cta: "Découvrir" },
+      { zone: "slider", position: 1, kicker: "Vente flash", title: "Boudin", highlight: "bas de porte", body: "Stop aux courants d'air, à la poussière et aux nuisibles. Installé en 30 secondes !", image: "assets/img/promo-boudin.jpg", link: "/produit/201", cta: "J'en profite", style: "yellow" },
+      { zone: "slider", position: 2, kicker: "Outillage pro", title: "Makita · Ingco ·", highlight: "Total", body: "Perceuses, meuleuses, visseuses et coffrets : l'outillage professionnel au meilleur prix.", link: "/categorie/outillage-electroportatif", cta: "Voir l'outillage" },
+      { zone: "mini", position: 0, title: "Boudin bas de porte", subtitle: "Vente flash · -25%", image: "assets/img/promo-boudin.jpg", link: "/produit/201" },
+      { zone: "mini", position: 1, title: "Ciment Colle Deutsch Color", subtitle: "À partir de 32,000 DT", image: "assets/img/promo-ciment-colle.jpg", link: "/categorie/materiaux-construction" },
+      { zone: "promo", position: 0, title: "La qualité allemande", highlight: "à Zarzis !", ar_text: "الجودة الألمانية توّا في جرجيس", body: "Ciment colle Deutsch Color FM 1000, FM 2200 et FM 3000.", image: "assets/img/promo-ciment-colle.jpg", link: "/categorie/materiaux-construction", cta: "Commander", style: "yellow" },
+      { zone: "promo", position: 1, title: "Vente", highlight: "flash", body: "Boudin bas de porte : stop nuisibles, poussière et courants d'air.", image: "assets/img/promo-boudin.jpg", link: "/produit/201", cta: "J'en profite" }
+    ];
+    const tx2 = db.transaction(() => banners.forEach((b) => insBanner.run({ ...defaults, ...b })));
+    tx2();
+    console.log(`[db] ${banners.length} bannières d'accueil importées.`);
   }
 }
 seedIfEmpty();

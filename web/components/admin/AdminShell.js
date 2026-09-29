@@ -10,7 +10,8 @@ const NAV = [
   { href: "/admin/produits", label: "Produits", ic: "📦" },
   { href: "/admin/commandes", label: "Commandes", ic: "🧾" },
   { href: "/admin/clients", label: "Clients", ic: "👥" },
-  { href: "/admin/categories", label: "Catégories", ic: "🏷️" }
+  { href: "/admin/categories", label: "Catégories", ic: "🏷️" },
+  { href: "/admin/bannieres", label: "Bannières", ic: "🖼️" }
 ];
 
 export default function AdminShell({ children }) {

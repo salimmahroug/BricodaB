@@ -5,6 +5,7 @@ server/data/*.db-shm
 server/data/*.db-journal
 .env
 .env.local
+server/uploads/
 
 # Next.js
 web/.next/

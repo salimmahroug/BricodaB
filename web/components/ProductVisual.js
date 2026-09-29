@@ -1,12 +1,13 @@
 "use client";
 import { useStore } from "./StoreContext";
 import Icon from "./Icon";
+import { resolveImg } from "@/lib/format";
 
 const TINTS = ["#fff6d1", "#f1f1f3", "#fdf0c4", "#ececef"];
 
 export default function ProductVisual({ product }) {
   if (product.img) {
-    return <img src={"/" + product.img.replace(/^\/+/, "")} alt={product.name} loading="lazy" />;
+    return <img src={resolveImg(product.img)} alt={product.name} loading="lazy" />;
   }
   return <GeneratedVisual product={product} />;
 }

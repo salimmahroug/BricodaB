@@ -3,26 +3,29 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Icon from "@/components/Icon";
 import ProductGrid from "@/components/ProductGrid";
-import { STORE, money } from "@/lib/format";
+import { STORE, resolveImg } from "@/lib/format";
+import { apiFetch } from "@/lib/api";
 import { useStore } from "@/components/StoreContext";
-
-const SLIDES = [
-  { cls: "", kicker: "Qualité allemande", title: <>Ciment colle <span>Deutsch Color</span></>, text: "FM 1000 · FM 2200 · FM 3000 — la qualité allemande, enfin à Zarzis ! Idéal pour le carrelage et le bâtiment.", img: "/assets/img/promo-ciment-colle.jpg", link: "/categorie/materiaux-construction", cta: "Découvrir" },
-  { cls: "s-yellow", kicker: "Vente flash", title: <>Boudin <span>bas de porte</span></>, text: "Stop aux courants d'air, à la poussière et aux nuisibles. Installé en 30 secondes !", img: "/assets/img/promo-boudin.jpg", link: "/produit/201", cta: "J'en profite" },
-  { cls: "", kicker: "Outillage pro", title: <>Makita · Ingco · <span>Total</span></>, text: "Perceuses, meuleuses, visseuses et coffrets : l'outillage professionnel au meilleur prix.", ic: "drill", link: "/categorie/outillage-electroportatif", cta: "Voir l'outillage" }
-];
 
 export default function HomePage() {
   const { products, categories, catalogReady } = useStore();
+  const [banners, setBanners] = useState(null);
   const [slideI, setSlideI] = useState(0);
   const [tab, setTab] = useState("promo");
 
-  useEffect(() => {
-    const t = setInterval(() => setSlideI((i) => (i + 1) % SLIDES.length), 5500);
-    return () => clearInterval(t);
-  }, []);
+  useEffect(() => { apiFetch("/api/banners").then((r) => setBanners(r.ok ? r.data.banners : [])); }, []);
 
-  if (!catalogReady) return <div className="container"><p style={{ padding: "60px 0", textAlign: "center", color: "#71747c" }}>Chargement…</p></div>;
+  const slides = (banners || []).filter((b) => b.zone === "slider");
+  const minis = (banners || []).filter((b) => b.zone === "mini");
+  const promos = (banners || []).filter((b) => b.zone === "promo");
+
+  useEffect(() => {
+    if (!slides.length) return;
+    const t = setInterval(() => setSlideI((i) => (i + 1) % slides.length), 5500);
+    return () => clearInterval(t);
+  }, [slides.length]);
+
+  if (!catalogReady || banners === null) return <div className="container"><p style={{ padding: "60px 0", textAlign: "center", color: "#71747c" }}>Chargement…</p></div>;
 
   const cats = categories.map((c) => ({ ...c, n: products.filter((p) => p.cat === c.slug).length }));
   const byTag = (t) => products.filter((p) => p.tags?.includes(t));
@@ -38,35 +41,37 @@ export default function HomePage() {
           <Link href="/boutique"><span className="ci"><Icon name="grid" /></span><b>Toutes les catégories</b></Link>
         </aside>
 
-        <div className="slider">
-          {SLIDES.map((s, i) => (
-            <div key={i} className={`slide ${s.cls} ${i === slideI ? "active" : ""}`}>
-              <div className="s-text">
-                <span className="s-kicker">{s.kicker}</span>
-                <h2>{s.title}</h2>
-                <p>{s.text}</p>
-                <Link className={`btn ${s.cls ? "btn-dark" : "btn-yellow"}`} href={s.link}>{s.cta} <Icon name="right" /></Link>
+        {slides.length ? (
+          <div className="slider">
+            {slides.map((s, i) => (
+              <div key={s.id} className={`slide ${s.style === "yellow" ? "s-yellow" : ""} ${i === slideI ? "active" : ""}`}>
+                <div className="s-text">
+                  {s.kicker ? <span className="s-kicker">{s.kicker}</span> : null}
+                  <h2>{s.title} {s.highlight ? <span>{s.highlight}</span> : null}</h2>
+                  <p>{s.body}</p>
+                  {s.link ? <Link className={`btn ${s.style === "yellow" ? "btn-dark" : "btn-yellow"}`} href={s.link}>{s.cta || "Découvrir"} <Icon name="right" /></Link> : null}
+                </div>
+                {s.image ? <div className="s-img"><img src={resolveImg(s.image)} alt="" /></div> : <div className="s-big-ic"><Icon name="box" /></div>}
               </div>
-              {s.img ? <div className="s-img"><img src={s.img} alt="" /></div> : <div className="s-big-ic"><Icon name={s.ic} /></div>}
+            ))}
+            <button className="slider-arrow prev" onClick={() => setSlideI((i) => (i - 1 + slides.length) % slides.length)} aria-label="Précédent"><Icon name="left" /></button>
+            <button className="slider-arrow next" onClick={() => setSlideI((i) => (i + 1) % slides.length)} aria-label="Suivant"><Icon name="right" /></button>
+            <div className="slider-dots">
+              {slides.map((_, i) => <button key={i} className={i === slideI ? "active" : ""} onClick={() => setSlideI(i)} aria-label={`Diapo ${i + 1}`} />)}
             </div>
-          ))}
-          <button className="slider-arrow prev" onClick={() => setSlideI((i) => (i - 1 + SLIDES.length) % SLIDES.length)} aria-label="Précédent"><Icon name="left" /></button>
-          <button className="slider-arrow next" onClick={() => setSlideI((i) => (i + 1) % SLIDES.length)} aria-label="Suivant"><Icon name="right" /></button>
-          <div className="slider-dots">
-            {SLIDES.map((_, i) => <button key={i} className={i === slideI ? "active" : ""} onClick={() => setSlideI(i)} aria-label={`Diapo ${i + 1}`} />)}
           </div>
-        </div>
+        ) : null}
 
-        <div className="hero-banners">
-          <Link className="mini-banner" href="/produit/201">
-            <img src="/assets/img/promo-boudin.jpg" alt="Boudin bas de porte" />
-            <div className="mb-label"><strong>Boudin bas de porte</strong><span>Vente flash · -25%</span></div>
-          </Link>
-          <Link className="mini-banner" href="/categorie/materiaux-construction">
-            <img src="/assets/img/promo-ciment-colle.jpg" alt="Ciment colle Deutsch Color" />
-            <div className="mb-label"><strong>Ciment Colle Deutsch Color</strong><span>À partir de {money(32)}</span></div>
-          </Link>
-        </div>
+        {minis.length ? (
+          <div className="hero-banners">
+            {minis.map((m) => (
+              <Link key={m.id} className="mini-banner" href={m.link || "#"}>
+                {m.image ? <img src={resolveImg(m.image)} alt={m.title || ""} /> : null}
+                <div className="mb-label"><strong>{m.title}</strong><span>{m.subtitle}</span></div>
+              </Link>
+            ))}
+          </div>
+        ) : null}
       </section>
 
       <Reassure />
@@ -96,26 +101,21 @@ export default function HomePage() {
         <ProductGrid products={tabbed} />
       </section>
 
-      <section className="section promo-row">
-        <Link className="promo-banner yellow" href="/categorie/materiaux-construction">
-          <div className="pb-text">
-            <h3>La qualité allemande <span>à Zarzis !</span></h3>
-            <p className="ar">الجودة الألمانية توّا في جرجيس</p>
-            <p>Ciment colle Deutsch Color FM 1000, FM 2200 et FM 3000.</p>
-            <span className="btn btn-dark btn-sm pb-cta">Commander</span>
-          </div>
-          <img src="/assets/img/promo-ciment-colle.jpg" alt="Deutsch Color" loading="lazy" />
-        </Link>
-        <Link className="promo-banner" href="/produit/201">
-          <div className="pb-text">
-            <h3>Vente <span>flash</span></h3>
-            <p>Boudin bas de porte : stop nuisibles, poussière et courants d&apos;air.</p>
-            <div className="p-price"><span className="price" style={{ color: "#f5c518" }}>{money(14.9)}</span><span className="old-price">{money(19.9)}</span></div>
-            <span className="btn btn-yellow btn-sm pb-cta">J&apos;en profite</span>
-          </div>
-          <img src="/assets/img/promo-boudin.jpg" alt="Boudin bas de porte" loading="lazy" />
-        </Link>
-      </section>
+      {promos.length ? (
+        <section className="section promo-row">
+          {promos.map((p) => (
+            <Link key={p.id} className={`promo-banner ${p.style === "yellow" ? "yellow" : ""}`} href={p.link || "#"}>
+              <div className="pb-text">
+                <h3>{p.title} {p.highlight ? <span>{p.highlight}</span> : null}</h3>
+                {p.ar_text ? <p className="ar">{p.ar_text}</p> : null}
+                <p>{p.body}</p>
+                {p.cta ? <span className={`btn btn-sm pb-cta ${p.style === "yellow" ? "btn-dark" : "btn-yellow"}`}>{p.cta}</span> : null}
+              </div>
+              {p.image ? <img src={resolveImg(p.image)} alt="" loading="lazy" /> : null}
+            </Link>
+          ))}
+        </section>
+      ) : null}
 
       {["outillage-electroportatif", "materiaux-construction", "outillage-a-main"].map((slug) => {
         const c = categories.find((x) => x.slug === slug);
