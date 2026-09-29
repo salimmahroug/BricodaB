@@ -4,6 +4,7 @@
   "description": "Brico Dab Zarzis — API Express + base de données SQLite",
   "private": true,
   "main": "index.js",
+  "engines": { "node": "22.x" },
   "scripts": {
     "start": "node index.js",
     "dev": "node index.js"
