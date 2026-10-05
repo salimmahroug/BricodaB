@@ -84,7 +84,7 @@ export default function Header({ onBurger, onCart }) {
                 {results.length ? results.map((p) => (
                   <Link key={p.id} href={`/produit/${p.id}`} onClick={() => setSuggestOpen(false)}>
                     <span className="thumb"><ProductVisual product={p} /></span>
-                    <span><span className="s-name">{p.name}</span><br /><span className="s-price">{money(p.price)}</span></span>
+                    <span><span className="s-name">{p.name}</span><br /><span className="s-price">{p.hidePrice ? "Prix sur demande" : money(p.price)}</span></span>
                   </Link>
                 )) : <a style={{ color: "#71747c" }}>Aucun résultat pour « {q} »</a>}
                 {results.length ? (

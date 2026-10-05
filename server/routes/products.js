@@ -20,7 +20,8 @@ function toJson(p) {
     short: p.short || "",
     feats: JSON.parse(p.features || "[]"),
     specs: JSON.parse(p.specs || "{}"),
-    stock: p.stock
+    stock: p.stock,
+    hidePrice: !!p.hide_price
   };
 }
 
@@ -49,13 +50,14 @@ router.post("/", requireAdmin, (req, res) => {
   if (err) return res.status(400).json({ error: err });
   const b = req.body;
   const info = db.prepare(`INSERT INTO products
-    (name, category_slug, brand, price, old_price, image, tags, short, features, specs, stock)
-    VALUES (@name, @cat, @brand, @price, @old, @img, @tags, @short, @features, @specs, @stock)`).run({
+    (name, category_slug, brand, price, old_price, image, tags, short, features, specs, stock, hide_price)
+    VALUES (@name, @cat, @brand, @price, @old, @img, @tags, @short, @features, @specs, @stock, @hidePrice)`).run({
     name: String(b.name).trim(), cat: b.cat, brand: b.brand ? String(b.brand).trim() : "Brico Dab",
     price: Number(b.price), old: b.old ? Number(b.old) : null, img: b.img || null,
     tags: JSON.stringify(Array.isArray(b.tags) ? b.tags : []), short: b.short || "",
     features: JSON.stringify(Array.isArray(b.feats) ? b.feats : []), specs: JSON.stringify(b.specs || {}),
-    stock: b.stock != null ? Number(b.stock) : 100
+    stock: b.stock != null ? Number(b.stock) : 100,
+    hidePrice: b.hidePrice ? 1 : 0
   });
   const row = db.prepare("SELECT * FROM products WHERE id = ?").get(info.lastInsertRowid);
   res.status(201).json({ product: toJson(row) });
@@ -68,12 +70,13 @@ router.put("/:id", requireAdmin, (req, res) => {
   if (err) return res.status(400).json({ error: err });
   const b = req.body;
   db.prepare(`UPDATE products SET name=@name, category_slug=@cat, brand=@brand, price=@price, old_price=@old,
-      image=@img, tags=@tags, short=@short, features=@features, specs=@specs, stock=@stock WHERE id=@id`).run({
+      image=@img, tags=@tags, short=@short, features=@features, specs=@specs, stock=@stock, hide_price=@hidePrice WHERE id=@id`).run({
     id: req.params.id, name: String(b.name).trim(), cat: b.cat, brand: b.brand ? String(b.brand).trim() : "Brico Dab",
     price: Number(b.price), old: b.old ? Number(b.old) : null, img: b.img || null,
     tags: JSON.stringify(Array.isArray(b.tags) ? b.tags : []), short: b.short || "",
     features: JSON.stringify(Array.isArray(b.feats) ? b.feats : []), specs: JSON.stringify(b.specs || {}),
-    stock: b.stock != null ? Number(b.stock) : existing.stock
+    stock: b.stock != null ? Number(b.stock) : existing.stock,
+    hidePrice: b.hidePrice ? 1 : 0
   });
   const row = db.prepare("SELECT * FROM products WHERE id = ?").get(req.params.id);
   res.json({ product: toJson(row) });

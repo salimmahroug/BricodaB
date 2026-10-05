@@ -3,7 +3,7 @@ import Link from "next/link";
 import Icon from "./Icon";
 import ProductVisual from "./ProductVisual";
 import Stars from "./Stars";
-import { money, discount } from "@/lib/format";
+import { money, discount, ref, STORE } from "@/lib/format";
 import { useStore } from "./StoreContext";
 
 export default function ProductCard({ product: p }) {
@@ -21,6 +21,7 @@ export default function ProductCard({ product: p }) {
     toggleWish(p.id);
     toast(on ? "Retiré des favoris" : "Ajouté aux favoris");
   };
+  const waHref = `https://wa.me/${STORE.phoneIntl}?text=${encodeURIComponent(`Bonjour Brico Dab, je voudrais connaître le prix de : ${p.name} (Réf. ${ref(p.id)}).`)}`;
   return (
     <article className="p-card">
       <Link className="p-img" href={`/produit/${p.id}`}>
@@ -39,13 +40,24 @@ export default function ProductCard({ product: p }) {
         <span className="p-brand">{p.brand}</span>
         <Link className="p-name" href={`/produit/${p.id}`} title={p.name}>{p.name}</Link>
         <Stars rating={p.rating} reviews={p.reviews} />
-        <div className="p-price">
-          <span className="price">{money(p.price)}</span>
-          {p.old ? <span className="old-price">{money(p.old)}</span> : null}
-        </div>
-        <button className="btn btn-yellow btn-sm btn-block add" onClick={onAdd} disabled={out}>
-          <Icon name="cart" /> Ajouter au panier
-        </button>
+        {p.hidePrice ? (
+          <>
+            <div className="p-price"><span className="price" style={{ fontSize: 15 }}>Prix sur demande</span></div>
+            <a className="btn btn-wa btn-sm btn-block" href={waHref} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
+              Demander le prix
+            </a>
+          </>
+        ) : (
+          <>
+            <div className="p-price">
+              <span className="price">{money(p.price)}</span>
+              {p.old ? <span className="old-price">{money(p.old)}</span> : null}
+            </div>
+            <button className="btn btn-yellow btn-sm btn-block add" onClick={onAdd} disabled={out}>
+              <Icon name="cart" /> Ajouter au panier
+            </button>
+          </>
+        )}
       </div>
     </article>
   );

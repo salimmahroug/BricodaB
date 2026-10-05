@@ -52,6 +52,7 @@ db.exec(`
     features TEXT NOT NULL DEFAULT '[]',
     specs TEXT NOT NULL DEFAULT '{}',
     stock INTEGER NOT NULL DEFAULT 100,
+    hide_price INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     FOREIGN KEY (category_slug) REFERENCES categories(slug)
   );
@@ -95,6 +96,14 @@ db.exec(`
     active INTEGER NOT NULL DEFAULT 1
   );
 `);
+
+// Migration pour les bases déjà déployées avant l'ajout de cette colonne
+// (CREATE TABLE IF NOT EXISTS ne modifie pas une table déjà existante).
+const productCols = db.prepare("PRAGMA table_info(products)").all().map((c) => c.name);
+if (!productCols.includes("hide_price")) {
+  db.exec("ALTER TABLE products ADD COLUMN hide_price INTEGER NOT NULL DEFAULT 0");
+  console.log("[db] Migration : colonne hide_price ajoutée à products.");
+}
 
 /* ---------------- Amorçage (première exécution uniquement) ---------------- */
 function seedIfEmpty() {
