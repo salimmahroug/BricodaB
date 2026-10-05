@@ -8,7 +8,7 @@ import { money } from "@/lib/format";
 import { useStore } from "@/components/StoreContext";
 
 export default function CartPage() {
-  const { cartItems, cartTotal, setQty, clearCart, catalogReady, cartHydrated } = useStore();
+  const { cartItems, cartTotal, cartHasQuoteItems, setQty, clearCart, catalogReady, cartHydrated } = useStore();
 
   if (!catalogReady || !cartHydrated) return <div className="container"><p style={{ padding: "60px 0", textAlign: "center", color: "#71747c" }}>Chargement…</p></div>;
 
@@ -36,14 +36,14 @@ export default function CartPage() {
               <Link className="thumb" href={`/produit/${l.p.id}`}><ProductVisual product={l.p} /></Link>
               <div>
                 <Link className="cl-name" href={`/produit/${l.p.id}`}>{l.p.name}</Link>
-                <div className="cl-unit">{money(l.p.price)} / unité</div>
+                <div className="cl-unit">{l.p.hidePrice ? "Prix sur demande" : `${money(l.p.price)} / unité`}</div>
               </div>
               <div className="qty">
                 <button onClick={() => setQty(l.id, l.qty - 1)} aria-label="Moins">−</button>
                 <input type="number" min="1" max="99" value={l.qty} onChange={(e) => setQty(l.id, parseInt(e.target.value) || 0)} aria-label="Quantité" />
                 <button onClick={() => setQty(l.id, l.qty + 1)} aria-label="Plus">+</button>
               </div>
-              <div className="cl-total">{money(l.p.price * l.qty)}</div>
+              <div className="cl-total">{l.p.hidePrice ? "Sur devis" : money(l.p.price * l.qty)}</div>
               <button className="rm" onClick={() => setQty(l.id, 0)} aria-label="Retirer"><Icon name="trash" /></button>
             </div>
           ))}
@@ -52,7 +52,15 @@ export default function CartPage() {
             <button className="btn btn-outline btn-sm" onClick={clearCart}><Icon name="trash" /> Vider le panier</button>
           </div>
         </div>
-        <CartSummary total={cartTotal} cta={<Link className="btn btn-yellow btn-block" href="/commande">Passer la commande <Icon name="right" /></Link>} />
+        <CartSummary
+          total={cartTotal}
+          hasQuoteItems={cartHasQuoteItems}
+          cta={
+            <Link className="btn btn-yellow btn-block" href="/commande">
+              {cartHasQuoteItems ? "Continuer / demander un devis" : "Passer la commande"} <Icon name="right" />
+            </Link>
+          }
+        />
       </div>
     </div>
   );

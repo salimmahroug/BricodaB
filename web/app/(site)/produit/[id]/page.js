@@ -69,31 +69,28 @@ export default function ProductPage({ params }) {
           {p.feats?.length ? <ul className="feats">{p.feats.map((f, i) => <li key={i}>{f}</li>)}</ul> : null}
           <p>{p.stock === 0 ? <span className="stock-no">● Rupture de stock</span> : <span className="stock-ok">● En stock — disponible au magasin de Zarzis</span>}</p>
 
+          <div className="buy-row">
+            <div className="qty">
+              <button onClick={() => setQty((q) => Math.max(1, q - 1))} aria-label="Moins">−</button>
+              <input type="number" min="1" max="99" value={qty} onChange={(e) => setQty(Math.max(1, Math.min(99, parseInt(e.target.value) || 1)))} aria-label="Quantité" />
+              <button onClick={() => setQty((q) => Math.min(99, q + 1))} aria-label="Plus">+</button>
+            </div>
+            <button className="btn btn-yellow" onClick={onAdd} disabled={p.stock === 0}><Icon name="cart" /> Ajouter au panier</button>
+            <button className="btn btn-outline" onClick={() => { toggleWish(p.id); toast(wish.includes(p.id) ? "Retiré des favoris" : "Ajouté aux favoris"); }} aria-label="Favoris"><Icon name="heart" /></button>
+          </div>
           {p.hidePrice ? (
             <div className="buy-row">
               <a className="btn btn-wa" target="_blank" rel="noopener noreferrer" href={`https://wa.me/${STORE.phoneIntl}?text=${encodeURIComponent(`Bonjour Brico Dab, je voudrais connaître le prix de : ${p.name} (Réf. ${ref(p.id)}).`)}`}>
                 {WA} Demander le prix sur WhatsApp
               </a>
-              <button className="btn btn-outline" onClick={() => { toggleWish(p.id); toast(wish.includes(p.id) ? "Retiré des favoris" : "Ajouté aux favoris"); }} aria-label="Favoris"><Icon name="heart" /></button>
             </div>
           ) : (
-            <>
-              <div className="buy-row">
-                <div className="qty">
-                  <button onClick={() => setQty((q) => Math.max(1, q - 1))} aria-label="Moins">−</button>
-                  <input type="number" min="1" max="99" value={qty} onChange={(e) => setQty(Math.max(1, Math.min(99, parseInt(e.target.value) || 1)))} aria-label="Quantité" />
-                  <button onClick={() => setQty((q) => Math.min(99, q + 1))} aria-label="Plus">+</button>
-                </div>
-                <button className="btn btn-yellow" onClick={onAdd} disabled={p.stock === 0}><Icon name="cart" /> Ajouter au panier</button>
-                <button className="btn btn-outline" onClick={() => { toggleWish(p.id); toast(wish.includes(p.id) ? "Retiré des favoris" : "Ajouté aux favoris"); }} aria-label="Favoris"><Icon name="heart" /></button>
-              </div>
-              <div className="buy-row">
-                <button className="btn btn-dark" onClick={onBuy} disabled={p.stock === 0}>Acheter maintenant</button>
-                <a className="btn btn-wa" target="_blank" rel="noopener noreferrer" href={`https://wa.me/${STORE.phoneIntl}?text=${encodeURIComponent(`Bonjour Brico Dab, je suis intéressé(e) par : ${p.name} (Réf. ${ref(p.id)}) à ${money(p.price)}.`)}`}>
-                  {WA} Commander sur WhatsApp
-                </a>
-              </div>
-            </>
+            <div className="buy-row">
+              <button className="btn btn-dark" onClick={onBuy} disabled={p.stock === 0}>Acheter maintenant</button>
+              <a className="btn btn-wa" target="_blank" rel="noopener noreferrer" href={`https://wa.me/${STORE.phoneIntl}?text=${encodeURIComponent(`Bonjour Brico Dab, je suis intéressé(e) par : ${p.name} (Réf. ${ref(p.id)}) à ${money(p.price)}.`)}`}>
+                {WA} Commander sur WhatsApp
+              </a>
+            </div>
           )}
           <div className="pd-assure">
             <div><Icon name="truck" /><span>Livraison 24 – 72h partout en Tunisie</span></div>

@@ -94,13 +94,14 @@ export function StoreProvider({ children }) {
   const prodBy = useCallback((id) => products.find((p) => p.id === Number(id)), [products]);
   const catBy = useCallback((slug) => categories.find((c) => c.slug === slug), [categories]);
   const cartItems = cart.map((l) => ({ ...l, p: prodBy(l.id) })).filter((l) => l.p);
-  const cartTotal = cartItems.reduce((s, l) => s + l.p.price * l.qty, 0);
+  const cartTotal = cartItems.reduce((s, l) => s + (l.p.hidePrice ? 0 : l.p.price * l.qty), 0);
   const cartCount = cart.reduce((s, l) => s + l.qty, 0);
+  const cartHasQuoteItems = cartItems.some((l) => l.p.hidePrice);
 
   const value = {
     products, categories, catalogReady, prodBy, catBy,
     currentUser, userReady, login, register, logout, loadUser,
-    cart, cartItems, cartTotal, cartCount, cartHydrated, addToCart, setQty, clearCart,
+    cart, cartItems, cartTotal, cartCount, cartHasQuoteItems, cartHydrated, addToCart, setQty, clearCart,
     wish, toggleWish,
     toast, toastMsg
   };

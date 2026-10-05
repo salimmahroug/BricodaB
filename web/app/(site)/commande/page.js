@@ -13,7 +13,7 @@ const WA = <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { cartItems, cartTotal, clearCart, currentUser, catalogReady, cartHydrated } = useStore();
+  const { cartItems, cartTotal, cartHasQuoteItems, clearCart, currentUser, catalogReady, cartHydrated } = useStore();
   const [form, setForm] = useState({ nom: "", tel: "", gouv: "Médenine", ville: "", adresse: "", livr: "livraison", note: "" });
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
@@ -64,12 +64,18 @@ export default function CheckoutPage() {
 
     const num = (apiRes.ok && apiRes.data?.order?.order_number) || "BD" + Date.now().toString().slice(-8);
     const total = cartTotal + shipping;
+    const title = cartHasQuoteItems
+      ? `🛒 *Commande / demande de devis ${num}* — Brico Dab Zarzis`
+      : `🛒 *Nouvelle commande ${num}* — Brico Dab Zarzis`;
     const lines = [
-      `🛒 *Nouvelle commande ${num}* — Brico Dab Zarzis`, "",
-      ...cartItems.map((l) => `• ${l.qty} × ${l.p.name} (${ref(l.p.id)}) = ${money(l.p.price * l.qty)}`), "",
-      `Sous-total : ${money(cartTotal)}`,
+      title, "",
+      ...cartItems.map((l) => l.p.hidePrice
+        ? `• ${l.qty} × ${l.p.name} (${ref(l.p.id)}) — prix sur demande`
+        : `• ${l.qty} × ${l.p.name} (${ref(l.p.id)}) = ${money(l.p.price * l.qty)}`), "",
+      `Sous-total : ${money(cartTotal)}${cartHasQuoteItems ? " (hors articles sur devis)" : ""}`,
       `Livraison : ${shipping ? money(shipping) : "Gratuite"}`,
-      `*Total : ${money(total)}*`, "",
+      `*Total${cartHasQuoteItems ? " partiel" : ""} : ${money(total)}*`,
+      cartHasQuoteItems ? "Merci de me confirmer le prix des articles sur demande." : "", "",
       `👤 ${form.nom}`, `📞 ${form.tel}`,
       `📍 ${form.livr === "magasin" ? "Retrait au magasin" : `${form.adresse}, ${form.ville}, ${form.gouv}`}`,
       form.note ? `📝 ${form.note}` : "",
@@ -78,7 +84,7 @@ export default function CheckoutPage() {
     const wa = `https://wa.me/${STORE.phoneIntl}?text=${encodeURIComponent(lines.join("\n"))}`;
 
     clearCart();
-    setResult({ num, total, tel: form.tel, nom: form.nom, wa });
+    setResult({ num, total, tel: form.tel, nom: form.nom, wa, hasQuoteItems: cartHasQuoteItems });
     window.open(wa, "_blank", "noopener");
     window.scrollTo(0, 0);
   }
@@ -89,7 +95,12 @@ export default function CheckoutPage() {
         <div className="box success" style={{ margin: "30px auto 48px", maxWidth: 640 }}>
           <div className="ok"><Icon name="check" /></div>
           <h1 className="page-title" style={{ marginBottom: 8 }}>Merci {result.nom.split(" ")[0]} !</h1>
-          <p>Votre commande <b>{result.num}</b> d&apos;un montant de <b>{money(result.total)}</b> a bien été enregistrée.</p>
+          <p>
+            Votre commande <b>{result.num}</b>{result.hasQuoteItems ? "" : <> d&apos;un montant de <b>{money(result.total)}</b></>} a bien été enregistrée.
+          </p>
+          {result.hasQuoteItems ? (
+            <p>Elle inclut des articles à <b>prix sur demande</b> : notre équipe vous confirmera leur prix lors de l&apos;envoi du devis.</p>
+          ) : null}
           <p>Pour la confirmer rapidement, envoyez-la à notre équipe sur WhatsApp. Nous vous appellerons au <b>{result.tel}</b>.</p>
           <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap", marginTop: 18 }}>
             <a className="btn btn-wa" href={result.wa} target="_blank" rel="noopener noreferrer">{WA} Envoyer sur WhatsApp</a>
@@ -140,16 +151,26 @@ export default function CheckoutPage() {
           <h3 style={{ marginTop: 22 }}>Paiement</h3>
           <div className="pay-opt"><Icon name="cash" /><span><b>Paiement à la livraison</b> — vous payez en espèces à la réception de votre commande.</span></div>
           <h3 style={{ marginTop: 22 }}>Votre commande</h3>
-          {cartItems.map((l) => <div className="sum-row" key={l.id}><span>{l.qty} × {l.p.name}</span><b>{money(l.p.price * l.qty)}</b></div>)}
+          {cartItems.map((l) => (
+            <div className="sum-row" key={l.id}>
+              <span>{l.qty} × {l.p.name}</span>
+              <b>{l.p.hidePrice ? "Sur demande" : money(l.p.price * l.qty)}</b>
+            </div>
+          ))}
         </div>
         <CartSummary
           total={cartTotal}
+          hasQuoteItems={cartHasQuoteItems}
           cta={
             <>
               <button type="submit" className="btn btn-yellow btn-block" disabled={submitting}>
-                <Icon name="check" /> {submitting ? "Envoi…" : "Confirmer la commande"}
+                <Icon name="check" /> {submitting ? "Envoi…" : cartHasQuoteItems ? "Envoyer ma demande de devis" : "Confirmer la commande"}
               </button>
-              <p style={{ fontSize: 12, color: "#71747c", margin: "10px 0 0" }}>Votre commande sera envoyée à Brico Dab via WhatsApp pour confirmation.</p>
+              <p style={{ fontSize: 12, color: "#71747c", margin: "10px 0 0" }}>
+                {cartHasQuoteItems
+                  ? "Votre demande sera envoyée à Brico Dab via WhatsApp, qui vous confirmera le prix et la commande."
+                  : "Votre commande sera envoyée à Brico Dab via WhatsApp pour confirmation."}
+              </p>
             </>
           }
         />

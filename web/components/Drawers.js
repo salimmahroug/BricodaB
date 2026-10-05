@@ -46,7 +46,7 @@ export function MobileMenu({ open, onClose }) {
 }
 
 export function CartDrawer({ open, onClose }) {
-  const { cartItems, cartTotal, setQty } = useStore();
+  const { cartItems, cartTotal, cartHasQuoteItems, setQty } = useStore();
   return (
     <aside className={`drawer right ${open ? "open" : ""}`} aria-label="Panier">
       <div className="drawer-head"><h3>Mon panier ({cartItems.reduce((s, l) => s + l.qty, 0)})</h3><button onClick={onClose} aria-label="Fermer"><Icon name="x" /></button></div>
@@ -56,7 +56,7 @@ export function CartDrawer({ open, onClose }) {
             <Link href={`/produit/${l.p.id}`} className="thumb" onClick={onClose}><ProductVisual product={l.p} /></Link>
             <div>
               <Link href={`/produit/${l.p.id}`} className="ml-name" onClick={onClose}>{l.p.name}</Link>
-              <div className="ml-meta">{l.qty} × <b>{money(l.p.price)}</b></div>
+              <div className="ml-meta">{l.qty} × <b>{l.p.hidePrice ? "Sur demande" : money(l.p.price)}</b></div>
             </div>
             <button className="rm" onClick={() => setQty(l.id, 0)} aria-label="Retirer"><Icon name="trash" /></button>
           </div>
@@ -66,7 +66,8 @@ export function CartDrawer({ open, onClose }) {
       </div>
       {cartItems.length ? (
         <div className="drawer-foot">
-          <div className="sum-row total" style={{ margin: 0, border: 0, paddingTop: 0 }}><span>Sous-total</span><span>{money(cartTotal)}</span></div>
+          <div className="sum-row total" style={{ margin: 0, border: 0, paddingTop: 0 }}><span>Sous-total</span><span>{money(cartTotal)}{cartHasQuoteItems ? " +" : ""}</span></div>
+          {cartHasQuoteItems ? <p style={{ fontSize: 12, color: "#71747c", margin: "4px 0 0" }}>Articles à prix sur demande non inclus.</p> : null}
           <Link className="btn btn-outline btn-block" href="/panier" onClick={onClose}>Voir le panier</Link>
           <Link className="btn btn-yellow btn-block" href="/commande" onClick={onClose}>Commander</Link>
         </div>
